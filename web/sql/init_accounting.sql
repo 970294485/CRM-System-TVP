@@ -1,0 +1,2 @@
+-- 已合併至 `accounting_categories`（見 Drizzle migration `0007_merge_accounting_categories.sql`）。
+-- 請勿再建立 `pt_accounting_categories`；新環境執行：`npm run db:migrate`。

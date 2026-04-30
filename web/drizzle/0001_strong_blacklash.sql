@@ -1,0 +1,2 @@
+ALTER TABLE "catalog_items" ADD COLUMN "is_draft" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "catalog_items_sku_unique" ON "catalog_items" USING btree ("sku") WHERE "catalog_items"."sku" IS NOT NULL;

@@ -1,0 +1,17 @@
+{
+  "name": "crm-system",
+  "private": true,
+  "scripts": {
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm run start",
+    "lint": "cd web && npm run lint",
+    "db:generate": "cd web && npm run db:generate",
+    "db:migrate": "cd web && npm run db:migrate",
+    "db:push": "cd web && npm run db:push",
+    "db:studio": "cd web && npm run db:studio",
+    "db:seed": "cd web && npm run db:seed",
+    "db:seed:dev-admin": "cd web && npm run db:seed:dev-admin",
+    "db:ping": "cd web && npm run db:ping"
+  }
+}
