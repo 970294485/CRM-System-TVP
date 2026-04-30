@@ -1,2 +1,5 @@
 # Local / IDE
 .cursor/
+
+# Workspace hoisted deps live at repo root (see package.json workspaces)
+/node_modules/
