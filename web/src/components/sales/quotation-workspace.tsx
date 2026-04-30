@@ -200,8 +200,8 @@ export function QuotationWorkspace({ org }: Props) {
   const [formDefaults, setFormDefaults] = useState<QuotationFormValues>(() => emptyQuotationDefaults());
   const [prefillCustomerQuery, setPrefillCustomerQuery] = useState("");
   const [saving, setSaving] = useState(false);
-  const [selectedCustomerCache, setSelectedCustomerCache] = useState<CustomerOption | null>(null);
-  const [liveForm, setLiveForm] = useState<QuotationFormValues | null>(null);
+  const [, setSelectedCustomerCache] = useState<CustomerOption | null>(null);
+  const [, setLiveForm] = useState<QuotationFormValues | null>(null);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ApiQuotation | null>(null);

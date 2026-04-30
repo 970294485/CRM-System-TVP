@@ -110,7 +110,7 @@ export async function POST(request: Request) {
   const db = getDb();
 
   let customerNameSnapshot = (d.customer_name_snapshot ?? "").trim();
-  let customerId = d.customer_id ?? null;
+  const customerId = d.customer_id ?? null;
 
   if (customerId) {
     const [c] = await db
