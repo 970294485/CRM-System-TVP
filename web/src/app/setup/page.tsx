@@ -10,7 +10,7 @@ export default async function SetupPage() {
   const db = getDb();
   const [{ total }] = await db.select({ total: count() }).from(users);
   if (Number(total ?? 0) > 0) {
-    redirect("/");
+    redirect("/login");
   }
 
   return (
@@ -22,7 +22,7 @@ export default async function SetupPage() {
       <SetupForm />
       <p className="mt-6 text-center text-sm text-zinc-500">
         已有帳號？{" "}
-        <Link href="/" className="underline">
+        <Link href="/login" className="underline">
           返回登入
         </Link>
       </p>

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 import { auth } from "@/auth";
 import { SettingsSidebarNav, type SettingsNavSection } from "@/components/settings/settings-sidebar-nav";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -138,7 +140,10 @@ const settingsSections: SettingsNavSection[] = [
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const email = session?.user?.email;
+  if (!session?.user?.email) {
+    redirect("/login");
+  }
+  const email = session.user.email;
   const db = getDb();
   const enterpriseBanner = await getEnterpriseSidebarBanner(db);
 

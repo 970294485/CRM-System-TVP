@@ -7,7 +7,7 @@ export function SignOutButton() {
     <button
       type="button"
       className="text-zinc-900 underline dark:text-zinc-100"
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick={() => signOut({ callbackUrl: "/login" })}
     >
       登出
     </button>
