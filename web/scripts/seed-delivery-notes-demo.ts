@@ -50,6 +50,7 @@ function normalizeRows(raw: unknown): ContractRow[] {
       if (!id || !contract_no || !customer_name) return null;
       const customer_id =
         row.customer_id != null && String(row.customer_id).trim() !== "" ? String(row.customer_id) : null;
+      const items: unknown = row.items !== undefined && row.items !== null ? row.items : [];
       return {
         id,
         contract_no,
@@ -57,10 +58,10 @@ function normalizeRows(raw: unknown): ContractRow[] {
         customer_name,
         customer_phone: row.customer_phone != null ? String(row.customer_phone) : null,
         customer_email: row.customer_email != null ? String(row.customer_email) : null,
-        items: row.items ?? [],
-      } satisfies ContractRow;
+        items,
+      };
     })
-    .filter((x): x is ContractRow => x != null);
+    .filter((x): x is ContractRow => x !== null);
 }
 
 async function main() {

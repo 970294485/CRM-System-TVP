@@ -18,9 +18,12 @@ if (!raw) {
   console.error("DATABASE_URL is empty — check web/.env.local");
   process.exit(1);
 }
+const DATABASE_URL = raw;
 
 async function main() {
-  const url = sanitizeDatabaseUrl(raw.charCodeAt(0) === 0xfeff ? raw.slice(1).trim() : raw);
+  const url = sanitizeDatabaseUrl(
+    DATABASE_URL.charCodeAt(0) === 0xfeff ? DATABASE_URL.slice(1).trim() : DATABASE_URL
+  );
   const sql = neon(url);
   const path = resolve(process.cwd(), "sql", "delivery_notes.sql");
   const file = readFileSync(path, "utf8");
