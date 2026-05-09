@@ -42,7 +42,6 @@ const settingsSections: SettingsNavSection[] = [
         href: "/dashboard/finance/multi-level-approval",
         label: "設置多層審批權限",
       },
-      { href: "/dashboard/accounting", label: "入賬類別與項目" },
     ],
   },
   {
@@ -51,6 +50,7 @@ const settingsSections: SettingsNavSection[] = [
     titleEn: "Account Management",
     items: [
       { href: "/dashboard/account/accounting-categories-settings", label: "入賬類別和項目設定" },
+      { href: "/dashboard/accounting", label: "入賬類別與項目" },
       { href: "/dashboard/account/accounting-basics", label: "會計基礎管理" },
       { href: "/dashboard/account/ar-ap-management", label: "賬款應收/應付管理" },
       { href: "/dashboard/account/income-statement", label: "利潤表" },

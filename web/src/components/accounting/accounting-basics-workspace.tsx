@@ -204,7 +204,7 @@ export function AccountingBasicsWorkspace({
           <div>
             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">入賬類別概覽</h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              類別／項目請至「財務管理 → 入賬類別與項目」維護。
+              類別／項目請至「會計管理 → 入賬類別與項目」維護。
             </p>
           </div>
           <Link

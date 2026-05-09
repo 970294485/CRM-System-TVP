@@ -14,15 +14,26 @@ function normalizeLoginEmail(raw: string): string {
   return s;
 }
 
-/** NextAuth refuses to sign JWTs/cookies without a secret; dev fallback avoids silent login failure. */
-const authSecret =
-  process.env.AUTH_SECRET?.trim() ||
-  process.env.NEXTAUTH_SECRET?.trim() ||
-  (process.env.NODE_ENV !== "production" ? "dev-only-insecure-placeholder-set-AUTH_SECRET" : "");
+/**
+ * Never pass `secret: ""` to Auth.js — it overrides env inference and yields MissingSecret / "Configuration"
+ * failures on hosted environments even when AUTH_SECRET exists.
+ */
+function resolveAuthSecret(): string | undefined {
+  const trimmed =
+    process.env.AUTH_SECRET?.trim() ||
+    process.env.NEXTAUTH_SECRET?.trim();
+  if (trimmed) return trimmed;
+  if (process.env.NODE_ENV !== "production") {
+    return "dev-only-insecure-placeholder-set-AUTH_SECRET";
+  }
+  return undefined;
+}
+
+const authSecretResolved = resolveAuthSecret();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: authSecret,
+  ...(authSecretResolved ? { secret: authSecretResolved } : {}),
   providers: [
     Credentials({
       name: "credentials",
@@ -93,6 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   session: {
     strategy: "jwt",

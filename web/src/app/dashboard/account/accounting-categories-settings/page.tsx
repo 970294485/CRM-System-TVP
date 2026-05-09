@@ -25,7 +25,7 @@ export default async function AccountingCategoriesSettingsPage() {
             總賬
           </Link>
           <Link className="underline hover:text-zinc-800 dark:hover:text-zinc-200" href="/dashboard/accounting">
-            財務選單「入賬類別與項目」（同資料）
+            會計管理「入賬類別與項目」（同資料）
           </Link>
         </div>
         {!editable ? (

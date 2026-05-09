@@ -2,14 +2,31 @@
 
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+const CONFIGURATION_HINT =
+  "伺服器無法簽發登入（常見為缺少 AUTH_SECRET）。本地請檢查 web/.env.local；部署到 Vercel 請在該專案 Settings → Environment Variables 確認已設定 AUTH_SECRET（與 DATABASE_URL），勾選 Production 並重新部署。亦請勿在面板裡把密鑰留了多餘的引號。";
 
 export function LoginView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   /** 登入成功後進儀表板（與 middleware 造訪 /login 時行為一致）。 */
   const postLoginPath = "/dashboard";
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = searchParams.get("error");
+    if (!q) return;
+    const msg =
+      q === "Configuration"
+        ? CONFIGURATION_HINT
+        : q === "CredentialsSignin"
+          ? "帳號或密碼不正確。"
+          : `登入流程發生問題（錯誤代碼：${q}）`;
+    setError(msg);
+    router.replace("/login");
+  }, [searchParams, router]);
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -30,9 +47,7 @@ export function LoginView() {
       const errType = res.error;
       const errCode = res.code;
       if (errType === "Configuration") {
-        setError(
-          "伺服器設定異常（常見原因：未在專案內 web 資料夾啟動，導致讀不到 web/.env.local；或缺少 AUTH_SECRET / DATABASE_URL。請在 web 目錄執行 npm run dev，並確認環境變數後重啟）"
-        );
+        setError(CONFIGURATION_HINT);
       } else if (errType === "CredentialsSignin" && errCode === "database_unavailable") {
         setError(
           "無法連線資料庫（請確認 web/.env.local 的 DATABASE_URL、網路與 Neon 狀態；專案請務必從 web 目錄或根目錄 npm run dev 啟動）"
