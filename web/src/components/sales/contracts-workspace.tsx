@@ -17,6 +17,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   QuotationEditor,
@@ -40,6 +47,9 @@ type ApiContract = {
   prepaymentNotes: string | null;
   status: string;
   createdAt: string;
+  ownerUserId: string | null;
+  ownerName: string | null;
+  commissionRatePercent: string | null;
   proformaInvoiceNo: string | null;
 };
 
@@ -187,7 +197,12 @@ function buildContractPrintSnapshot(
   };
 }
 
-function formToContractFullPayload(values: QuotationFormValues, prepayAmt: number, prepayNotes: string | null) {
+function formToContractFullPayload(
+  values: QuotationFormValues,
+  prepayAmt: number,
+  prepayNotes: string | null,
+  finance: { ownerUserId: string | null; commissionRatePercent: number | null }
+) {
   return {
     customer_id: values.customer_id,
     contract_date: values.quote_date,
@@ -205,6 +220,8 @@ function formToContractFullPayload(values: QuotationFormValues, prepayAmt: numbe
     })),
     prepayment_amount: prepayAmt,
     prepayment_notes: prepayNotes?.trim() ? prepayNotes.trim() : null,
+    owner_user_id: finance.ownerUserId,
+    commission_rate_percent: finance.commissionRatePercent,
   };
 }
 
@@ -236,6 +253,11 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
   const [editPrefillCustomerQuery, setEditPrefillCustomerQuery] = useState("");
   const [editPrepayAmount, setEditPrepayAmount] = useState("");
   const [editPrepayNotes, setEditPrepayNotes] = useState("");
+  const [editOwnerUserId, setEditOwnerUserId] = useState<string>("");
+  const [editCommissionRate, setEditCommissionRate] = useState("");
+  const [userPickList, setUserPickList] = useState<{ id: string; name: string; email: string }[]>([]);
+  /** 若業務帳號已停用未出現在列表，仍保留一筆供 Select 顯示 */
+  const [editOwnerFallback, setEditOwnerFallback] = useState<{ id: string; name: string } | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -264,6 +286,19 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (!editDialogOpen) return;
+    void (async () => {
+      try {
+        const res = await fetch("/api/company-documents/users?limit=200", { credentials: "same-origin" });
+        const data = (await res.json().catch(() => ({}))) as { items?: { id: string; name: string; email: string }[] };
+        setUserPickList(Array.isArray(data.items) ? data.items : []);
+      } catch {
+        setUserPickList([]);
+      }
+    })();
+  }, [editDialogOpen]);
 
   const openPrepay = (row: ApiContract) => {
     setPrepayTarget(row);
@@ -371,6 +406,13 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
       setEditFormKey(item.id);
       setEditPrepayAmount(numFromApi(item.prepaymentAmount));
       setEditPrepayNotes(item.prepaymentNotes ?? "");
+      setEditOwnerUserId(item.ownerUserId ?? "");
+      setEditCommissionRate(numFromApi(item.commissionRatePercent));
+      setEditOwnerFallback(
+        item.ownerUserId
+          ? { id: item.ownerUserId, name: (item.ownerName ?? "").trim() || "（未載入姓名）" }
+          : null
+      );
       setEditPrefillCustomerQuery(item.customerName ?? "");
       setEditDialogOpen(true);
     } catch {
@@ -385,6 +427,16 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
       toast.error("預收款須為非負數");
       return;
     }
+    const ownerUserId = editOwnerUserId.trim() === "" ? null : editOwnerUserId.trim();
+    let commissionRatePercent: number | null = null;
+    if (editCommissionRate.trim() !== "") {
+      const cr = Number(editCommissionRate);
+      if (!Number.isFinite(cr) || cr < 0 || cr > 100) {
+        toast.error("佣金比例須為 0–100");
+        return;
+      }
+      commissionRatePercent = cr;
+    }
     setEditSaving(true);
     try {
       const res = await fetch(`/api/sales/contracts/${editTargetId}`, {
@@ -392,7 +444,10 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          formToContractFullPayload(values, amt, editPrepayNotes.trim() ? editPrepayNotes.trim() : null)
+          formToContractFullPayload(values, amt, editPrepayNotes.trim() ? editPrepayNotes.trim() : null, {
+            ownerUserId,
+            commissionRatePercent,
+          })
         ),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string; hint?: string };
@@ -458,6 +513,9 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
             <Link href="/dashboard/sales/proforma-invoices">預收發票</Link>
           </Button>
           <Button type="button" variant="outline" asChild>
+            <Link href="/dashboard/sales/finance-commission">對應財務和佣金功能</Link>
+          </Button>
+          <Button type="button" variant="outline" asChild>
             <Link href="/dashboard/sales/quotations">報價單功能</Link>
           </Button>
         </div>
@@ -475,19 +533,21 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
               <th className="px-4 py-3 text-right">合同總額</th>
               <th className="px-4 py-3 text-right">預收款（含稅）</th>
               <th className="px-4 py-3">預收發票</th>
+              <th className="px-4 py-3">業務</th>
+              <th className="px-4 py-3 text-right">佣金%</th>
               <th className="px-4 py-3 text-right">操作</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={11} className="px-4 py-8 text-center text-zinc-500">
                   載入中…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={11} className="px-4 py-8 text-center text-zinc-500">
                   尚無銷售合同。請至報價單列表點「轉成合同」建立。
                 </td>
               </tr>
@@ -520,6 +580,14 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-zinc-600 dark:text-zinc-400">
                       {r.proformaInvoiceNo ?? "—"}
+                    </td>
+                    <td className="max-w-[140px] truncate px-4 py-3 text-xs text-zinc-700 dark:text-zinc-300">
+                      {r.ownerName ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
+                      {r.commissionRatePercent != null && r.commissionRatePercent !== ""
+                        ? fmtMoney(r.commissionRatePercent)
+                        : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-1">
@@ -608,6 +676,48 @@ export function ContractsWorkspace({ org }: WorkspaceProps) {
               saving={editSaving}
               submitLabel="儲存變更"
             />
+            <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+              <p className="mb-3 text-xs font-medium text-zinc-500">業務與佣金（預收款確認後自動計提）</p>
+              <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="edit-owner-user">業務負責人</Label>
+                  <Select
+                    value={editOwnerUserId || "__none__"}
+                    onValueChange={(v) => setEditOwnerUserId(v === "__none__" ? "" : v)}
+                    disabled={editSaving}
+                  >
+                    <SelectTrigger id="edit-owner-user" className="w-full">
+                      <SelectValue placeholder="選擇內部帳號" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— 未指定 —</SelectItem>
+                      {editOwnerFallback && !userPickList.some((u) => u.id === editOwnerFallback.id) ? (
+                        <SelectItem value={editOwnerFallback.id}>{editOwnerFallback.name}</SelectItem>
+                      ) : null}
+                      {userPickList.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name} ({u.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-commission-rate">佣金比例（%，留空表示不計提）</Label>
+                  <Input
+                    id="edit-commission-rate"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={100}
+                    value={editCommissionRate}
+                    onChange={(e) => setEditCommissionRate(e.target.value)}
+                    disabled={editSaving}
+                    placeholder="例如：2.5"
+                  />
+                </div>
+              </div>
+            </div>
             <div className="border-t border-zinc-200 pt-4 dark:border-zinc-700">
               <p className="mb-3 text-xs font-medium text-zinc-500">預收款（含稅，與預收發票連動）</p>
               <div className="grid gap-4 sm:grid-cols-2">

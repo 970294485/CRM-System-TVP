@@ -6,6 +6,10 @@ import { auth } from "@/auth";
 import { getDb } from "@/db";
 import { financeArAdvanceReceipts, salesContracts } from "@/db/schema";
 import { canEditFinance } from "@/lib/authz";
+import {
+  createCommissionAccrualOnAdvanceReceived,
+  moveCommissionAccrualsContractForAdvanceReceipt,
+} from "@/lib/sales/commission-accrual";
 
 export const runtime = "nodejs";
 
@@ -71,6 +75,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         return NextResponse.json({ error: "僅草稿可確認收款，或單據不存在" }, { status: 409 });
       }
 
+      try {
+        await createCommissionAccrualOnAdvanceReceived(db, idParsed.data);
+      } catch (ce) {
+        console.error("[PATCH ar-advance-receipts confirm_receive] commission accrual", ce);
+      }
+
       return NextResponse.json({ ok: true });
     }
 
@@ -127,6 +137,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         .update(financeArAdvanceReceipts)
         .set({ salesContractId: parsed.data.salesContractId })
         .where(eq(financeArAdvanceReceipts.id, idParsed.data));
+
+      try {
+        await moveCommissionAccrualsContractForAdvanceReceipt(db, idParsed.data, parsed.data.salesContractId);
+      } catch (me) {
+        console.error("[PATCH ar-advance-receipts assign_contract] move commission accruals", me);
+      }
 
       return NextResponse.json({ ok: true });
     }

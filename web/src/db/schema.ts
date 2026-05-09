@@ -479,6 +479,10 @@ export const salesContracts = pgTable("sales_contracts", {
   /** 預收款目標金額（含稅）；用於開立預收發票 */
   prepaymentAmount: numeric("prepayment_amount", { precision: 12, scale: 2 }),
   prepaymentNotes: text("prepayment_notes"),
+  /** 業務負責人（佣金歸屬）；可與客戶主檔負責人不同 */
+  ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "set null" }),
+  /** 合同級佣金比例（%）；預收款確認入帳時依「收款金額 × 比例」計提 */
+  commissionRatePercent: numeric("commission_rate_percent", { precision: 5, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -506,6 +510,29 @@ export const proformaInvoices = pgTable("proforma_invoices", {
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull().default("Issued"),
   notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** 送貨單（由銷售合同快照開立；取號 entity_type = delivery_note） */
+export const deliveryNotes = pgTable("delivery_notes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  dnNo: text("dn_no").notNull().unique(),
+  contractId: uuid("contract_id")
+    .notNull()
+    .references(() => salesContracts.id, { onDelete: "restrict" }),
+  sourceContractNo: text("source_contract_no").notNull(),
+  customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  customerEmail: text("customer_email"),
+  shipToAddress: text("ship_to_address"),
+  shipDate: date("ship_date").notNull(),
+  items: jsonb("items")
+    .$type<QuotationLineItem[]>()
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  notes: text("notes"),
+  status: text("status").notNull().default("Draft"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -636,6 +663,52 @@ export const financeArAdvanceReceiptsRelations = relations(financeArAdvanceRecei
     references: [salesContracts.id],
   }),
   createdBy: one(users, { fields: [financeArAdvanceReceipts.createdByUserId], references: [users.id] }),
+}));
+
+/** 銷售佣金計提（預收款確認時自動寫入；一筆預收款至多一筆計提） */
+export const salesCommissionAccruals = pgTable(
+  "sales_commission_accruals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    contractId: uuid("contract_id")
+      .notNull()
+      .references(() => salesContracts.id, { onDelete: "cascade" }),
+    beneficiaryUserId: uuid("beneficiary_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    basis: text("basis").notNull(),
+    ratePercent: numeric("rate_percent", { precision: 5, scale: 2 }).notNull(),
+    baseAmount: numeric("base_amount", { precision: 12, scale: 2 }).notNull(),
+    commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).notNull(),
+    advanceReceiptId: uuid("advance_receipt_id").references(() => financeArAdvanceReceipts.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    check(
+      "sales_commission_accruals_basis_check",
+      sql`${t.basis} IN ('advance_receipt')`
+    ),
+    uniqueIndex("sales_commission_accruals_adv_rcpt_uidx")
+      .on(t.advanceReceiptId)
+      .where(sql`${t.advanceReceiptId} IS NOT NULL`),
+  ]
+);
+
+export const salesCommissionAccrualsRelations = relations(salesCommissionAccruals, ({ one }) => ({
+  contract: one(salesContracts, {
+    fields: [salesCommissionAccruals.contractId],
+    references: [salesContracts.id],
+  }),
+  beneficiary: one(users, {
+    fields: [salesCommissionAccruals.beneficiaryUserId],
+    references: [users.id],
+  }),
+  advanceReceipt: one(financeArAdvanceReceipts, {
+    fields: [salesCommissionAccruals.advanceReceiptId],
+    references: [financeArAdvanceReceipts.id],
+  }),
 }));
 
 /** 模組1：月度支出預算上限（採購承諾額按 po_date 所屬月） */

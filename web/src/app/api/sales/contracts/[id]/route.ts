@@ -36,6 +36,8 @@ const fullContractPatchSchema = z.object({
   status: z.enum(["Active", "Completed", "Cancelled"]),
   prepayment_amount: z.coerce.number().min(0).optional(),
   prepayment_notes: z.string().optional().nullable(),
+  owner_user_id: z.union([z.string().uuid(), z.null()]).optional(),
+  commission_rate_percent: z.union([z.coerce.number().min(0).max(100), z.null()]).optional(),
 });
 
 function isFullContractPatchBody(body: unknown): body is Record<string, unknown> {
@@ -163,6 +165,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
                 prepaymentNotes: data.prepayment_notes?.trim() ? data.prepayment_notes.trim() : null,
               }
             : {}),
+          ...(data.owner_user_id !== undefined ? { ownerUserId: data.owner_user_id } : {}),
+          ...(data.commission_rate_percent !== undefined
+            ? {
+                commissionRatePercent:
+                  data.commission_rate_percent != null ? String(data.commission_rate_percent) : null,
+              }
+            : {}),
         })
         .where(eq(salesContracts.id, idParsed.data));
 
@@ -175,7 +184,9 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
         {
           error: "無法更新銷售合同",
           detail: process.env.NODE_ENV !== "production" ? msg : undefined,
-          hint: /prepayment|does not exist/i.test(msg) ? "請執行 npm run db:apply:contracts-prepayment" : undefined,
+          hint: /prepayment|does not exist/i.test(msg)
+            ? "請執行 npm run db:apply:contracts-prepayment；業務／佣金欄位請執行 npm run db:apply:sales-finance-commission"
+            : undefined,
         },
         { status: 500 }
       );

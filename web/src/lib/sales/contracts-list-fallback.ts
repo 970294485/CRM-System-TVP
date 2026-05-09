@@ -15,6 +15,9 @@ export type SalesContractListItem = {
   prepaymentNotes: string | null;
   status: string;
   createdAt: string;
+  ownerUserId: string | null;
+  ownerName: string | null;
+  commissionRatePercent: string | null;
   proformaInvoiceNo: string | null;
 };
 
@@ -31,6 +34,9 @@ type RowExtended = {
   prepayment_notes: string | null;
   status: string;
   created_at: string;
+  owner_user_id: string | null;
+  owner_name: string | null;
+  commission_rate_percent: string | null;
   proforma_invoice_no: string | null;
 };
 
@@ -61,6 +67,9 @@ function mapExtended(r: RowExtended): SalesContractListItem {
     prepaymentNotes: r.prepayment_notes,
     status: r.status,
     createdAt: r.created_at,
+    ownerUserId: r.owner_user_id,
+    ownerName: r.owner_name,
+    commissionRatePercent: r.commission_rate_percent,
     proformaInvoiceNo: r.proforma_invoice_no,
   };
 }
@@ -79,6 +88,9 @@ function mapMinimal(r: RowMinimal): SalesContractListItem {
     prepaymentNotes: null,
     status: r.status,
     createdAt: r.created_at,
+    ownerUserId: null,
+    ownerName: null,
+    commissionRatePercent: null,
     proformaInvoiceNo: null,
   };
 }
@@ -96,9 +108,12 @@ export async function listSalesContractsViaNeonSql(customerId?: string): Promise
            sc.contract_date::text AS contract_date, sc.total_amount::text AS total_amount,
            sc.prepayment_amount::text AS prepayment_amount, sc.prepayment_notes,
            sc.status, sc.created_at::text AS created_at,
+           sc.owner_user_id::text AS owner_user_id, ou.name AS owner_name,
+           sc.commission_rate_percent::text AS commission_rate_percent,
            pi.invoice_no AS proforma_invoice_no
     FROM sales_contracts sc
     LEFT JOIN proforma_invoices pi ON pi.contract_id = sc.id
+    LEFT JOIN users ou ON ou.id = sc.owner_user_id
   `;
 
   try {

@@ -75,6 +75,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
         totalAmount: q.totalAmount,
         status: "Active",
         notes: q.notes?.trim() ? q.notes.trim() : null,
+        ownerUserId: q.customerAssignedUserId ?? null,
       })
       .returning({
         id: salesContracts.id,
@@ -122,11 +123,13 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
         `
         INSERT INTO sales_contracts (
           contract_no, source_quote_no, quotation_id, customer_id, customer_name, customer_phone, customer_email,
-          contract_date, valid_until, items, subtotal, tax_rate, tax_amount, total_amount, status, notes
+          contract_date, valid_until, items, subtotal, tax_rate, tax_amount, total_amount, status, notes,
+          owner_user_id
         )
         VALUES (
           $1, $2, $3::uuid, $4::uuid, $5, $6, $7,
-          $8::date, $9::date, $10::jsonb, $11::numeric, $12::numeric, $13::numeric, $14::numeric, $15, $16
+          $8::date, $9::date, $10::jsonb, $11::numeric, $12::numeric, $13::numeric, $14::numeric, $15, $16,
+          $17::uuid
         )
         RETURNING id, contract_no, quotation_id
       `,
@@ -147,6 +150,7 @@ export async function POST(_req: NextRequest, ctx: { params: Promise<{ id: strin
           q.totalAmount,
           "Active",
           q.notes?.trim() ? q.notes.trim() : null,
+          q.customerAssignedUserId,
         ]
       );
       const insRows = normalizeNeonRows<{ id: string; contract_no: string; quotation_id: string | null }>(insRaw);

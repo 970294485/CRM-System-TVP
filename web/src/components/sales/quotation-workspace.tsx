@@ -185,11 +185,15 @@ function quotationDeleteConfirmLabel(q: ApiQuotation | null): string {
   return name ? `${name}-${q.quoteNo}` : q.quoteNo;
 }
 
-type Props = { org: QuotationPrintOrg };
+type Props = {
+  org: QuotationPrintOrg;
+  headingTitle?: string;
+  headingDescription?: string;
+};
 
 type FormDialogMode = "create" | "edit" | "view";
 
-export function QuotationWorkspace({ org }: Props) {
+export function QuotationWorkspace({ org, headingTitle, headingDescription }: Props) {
   const [rows, setRows] = useState<ApiQuotation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -485,8 +489,12 @@ export function QuotationWorkspace({ org }: Props) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">報價單功能</h1>
-          <p className="text-sm text-zinc-500">表格檢視，使用彈窗新增、查看、編輯與刪除</p>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+            {headingTitle ?? "報價單功能"}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            {headingDescription ?? "表格檢視，使用彈窗新增、查看、編輯與刪除"}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" asChild>

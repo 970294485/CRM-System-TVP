@@ -64,7 +64,9 @@ const settingsSections: SettingsNavSection[] = [
     items: [
       { href: "/dashboard/sales/quotations", label: "報價單功能" },
       { href: "/dashboard/sales/contracts", label: "銷售合同" },
+      { href: "/dashboard/sales/delivery-notes", label: "送貨管理" },
       { href: "/dashboard/sales/proforma-invoices", label: "預收發票" },
+      { href: "/dashboard/sales/finance-commission", label: "對應財務和佣金功能" },
       { href: "/dashboard/sales/analytics-reports", label: "分析報表功能" },
       { href: "/dashboard/sales/stock-purchase-docking", label: "--對應庫單和採購對接功能" },
     ],
@@ -73,7 +75,12 @@ const settingsSections: SettingsNavSection[] = [
     id: "document-export",
     titleZh: "文件導出功能",
     titleEn: "Document Excel & PDF Function",
-    items: [],
+    items: [
+      { href: "/dashboard/document-export/invoice", label: "導出 INVOICE" },
+      { href: "/dashboard/document-export/quotation", label: "導出 QUOTATION" },
+      { href: "/dashboard/document-export/delivery-note", label: "導出 DELIVERY NOTE" },
+      { href: "/dashboard/document-export/payment-request", label: "導出 PAYMENT REQUEST" },
+    ],
   },
   {
     id: "file-management",
@@ -83,6 +90,17 @@ const settingsSections: SettingsNavSection[] = [
       { href: "/dashboard/files/document-classification", label: "文件分類" },
       { href: "/dashboard/files/personal-drive", label: "個人網盤" },
       { href: "/dashboard/files/company-documents", label: "公共文件數據庫" },
+    ],
+  },
+  {
+    id: "customer-management",
+    titleZh: "客戶管理",
+    titleEn: "Customer Management Function",
+    items: [
+      { href: "/dashboard/customers", label: "客戶列表" },
+      { href: "/dashboard/sales/customer-analytics", label: "客戶分析圖表" },
+      { href: "/dashboard/customers/sales-billing", label: "銷售開單管理" },
+      { href: "/dashboard/customers/marketing-email", label: "發送推廣訊息： Email" },
     ],
   },
   {
@@ -102,17 +120,6 @@ const settingsSections: SettingsNavSection[] = [
         href: "/dashboard/services/order-calendar-sync",
         label: "訂單與負責人行事曆同步",
       },
-    ],
-  },
-  {
-    id: "customer-management",
-    titleZh: "客戶管理",
-    titleEn: "Customer Management Function",
-    items: [
-      { href: "/dashboard/customers", label: "客戶列表" },
-      { href: "/dashboard/sales/customer-analytics", label: "客戶分析圖表" },
-      { href: "/dashboard/customers/sales-billing", label: "銷售開單管理" },
-      { href: "/dashboard/customers/marketing-email", label: "發送推廣訊息： Email" },
     ],
   },
   {

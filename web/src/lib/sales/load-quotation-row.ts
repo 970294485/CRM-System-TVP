@@ -9,6 +9,8 @@ export type QuotationRowForConvert = {
   id: string;
   quoteNo: string;
   customerId: string | null;
+  /** 客戶主檔負責人 → 轉合同時預設為合同業務 */
+  customerAssignedUserId: string | null;
   customerName: string;
   customerPhone: string | null;
   customerEmail: string | null;
@@ -44,6 +46,7 @@ export async function loadQuotationRowForConvert(id: string): Promise<QuotationR
         status: quotations.status,
         notes: quotations.notes,
         joinedCustomerName: customers.name,
+        customerAssignedUserId: customers.assignedToUserId,
       })
       .from(quotations)
       .leftJoin(customers, eq(quotations.customerId, customers.id))
@@ -56,6 +59,7 @@ export async function loadQuotationRowForConvert(id: string): Promise<QuotationR
       id: row.id,
       quoteNo: row.quoteNo,
       customerId: row.customerId,
+      customerAssignedUserId: row.customerAssignedUserId ?? null,
       customerName: row.joinedCustomerName ?? row.customerName,
       customerPhone: row.customerPhone,
       customerEmail: row.customerEmail,
@@ -77,6 +81,7 @@ export async function loadQuotationRowForConvert(id: string): Promise<QuotationR
       id: legacy.id,
       quoteNo: legacy.quoteNo,
       customerId: legacy.customerId,
+      customerAssignedUserId: null,
       customerName: legacy.customerName,
       customerPhone: legacy.customerPhone,
       customerEmail: legacy.customerEmail,

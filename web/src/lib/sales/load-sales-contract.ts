@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { getDb, getNeonSql } from "@/db";
-import { proformaInvoices, salesContracts } from "@/db/schema";
+import { proformaInvoices, salesContracts, users } from "@/db/schema";
 import { normalizeNeonRows } from "@/lib/sales/quotations-list-fallback";
 
 /** 與 GET /api/sales/contracts/[id] 回傳 item 一致 */
@@ -25,6 +26,9 @@ export type SalesContractDetail = {
   notes: string | null;
   prepaymentAmount: string | null;
   prepaymentNotes: string | null;
+  ownerUserId: string | null;
+  ownerName: string | null;
+  commissionRatePercent: string | null;
   createdAt: string;
   proformaInvoiceNo: string | null;
 };
@@ -49,6 +53,9 @@ function mapDrizzleRow(r: {
   notes: string | null;
   prepaymentAmount: string | null;
   prepaymentNotes: string | null;
+  ownerUserId: string | null;
+  ownerName: string | null;
+  commissionRatePercent: string | null;
   createdAt: Date;
   proformaInvoiceNo: string | null;
 }): SalesContractDetail {
@@ -72,6 +79,9 @@ function mapDrizzleRow(r: {
     notes: r.notes,
     prepaymentAmount: r.prepaymentAmount,
     prepaymentNotes: r.prepaymentNotes,
+    ownerUserId: r.ownerUserId,
+    ownerName: r.ownerName,
+    commissionRatePercent: r.commissionRatePercent,
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
     proformaInvoiceNo: r.proformaInvoiceNo,
   };
@@ -80,6 +90,7 @@ function mapDrizzleRow(r: {
 export async function loadSalesContractDetail(id: string): Promise<SalesContractDetail | null> {
   try {
     const db = getDb();
+    const owner = alias(users, "sales_contract_owner");
     const [row] = await db
       .select({
         id: salesContracts.id,
@@ -101,11 +112,15 @@ export async function loadSalesContractDetail(id: string): Promise<SalesContract
         notes: salesContracts.notes,
         prepaymentAmount: salesContracts.prepaymentAmount,
         prepaymentNotes: salesContracts.prepaymentNotes,
+        ownerUserId: salesContracts.ownerUserId,
+        ownerName: owner.name,
+        commissionRatePercent: salesContracts.commissionRatePercent,
         createdAt: salesContracts.createdAt,
         proformaInvoiceNo: proformaInvoices.invoiceNo,
       })
       .from(salesContracts)
       .leftJoin(proformaInvoices, eq(proformaInvoices.contractId, salesContracts.id))
+      .leftJoin(owner, eq(salesContracts.ownerUserId, owner.id))
       .where(eq(salesContracts.id, id))
       .limit(1);
 
@@ -136,6 +151,9 @@ type NeonDetailExtended = {
   notes: string | null;
   prepayment_amount: string | null;
   prepayment_notes: string | null;
+  owner_user_id: string | null;
+  owner_name: string | null;
+  commission_rate_percent: string | null;
   created_at: string;
   proforma_invoice_no: string | null;
 };
@@ -178,6 +196,9 @@ function mapNeonExtended(r: NeonDetailExtended): SalesContractDetail {
     notes: r.notes,
     prepaymentAmount: r.prepayment_amount,
     prepaymentNotes: r.prepayment_notes,
+    ownerUserId: r.owner_user_id,
+    ownerName: r.owner_name,
+    commissionRatePercent: r.commission_rate_percent,
     createdAt: r.created_at,
     proformaInvoiceNo: r.proforma_invoice_no,
   };
@@ -191,9 +212,12 @@ async function loadSalesContractDetailNeon(id: string): Promise<SalesContractDet
            sc.items, sc.subtotal::text AS subtotal, sc.tax_rate::text AS tax_rate, sc.tax_amount::text AS tax_amount,
            sc.total_amount::text AS total_amount, sc.status, sc.notes,
            sc.prepayment_amount::text AS prepayment_amount, sc.prepayment_notes,
+           sc.owner_user_id::text AS owner_user_id, ou.name AS owner_name,
+           sc.commission_rate_percent::text AS commission_rate_percent,
            sc.created_at::text AS created_at, pi.invoice_no AS proforma_invoice_no
     FROM sales_contracts sc
     LEFT JOIN proforma_invoices pi ON pi.contract_id = sc.id
+    LEFT JOIN users ou ON ou.id = sc.owner_user_id
     WHERE sc.id = $1::uuid
     LIMIT 1
   `;
@@ -235,6 +259,9 @@ async function loadSalesContractDetailNeon(id: string): Promise<SalesContractDet
       notes: null,
       prepaymentAmount: null,
       prepaymentNotes: null,
+      ownerUserId: null,
+      ownerName: null,
+      commissionRatePercent: null,
       createdAt: r2.created_at,
       proformaInvoiceNo: null,
     };

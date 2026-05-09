@@ -145,9 +145,18 @@ function buildProformaPrintSnapshot(row: ProformaDetail): Omit<ProformaInvoicePr
   };
 }
 
-type WorkspaceProps = { org: QuotationPrintOrg };
+type WorkspaceProps = {
+  org: QuotationPrintOrg;
+  /** 未傳則為銷售頁預設「預收發票」 */
+  headingTitle?: string;
+  headingDescription?: string;
+};
 
-export function ProformaInvoicesWorkspace({ org }: WorkspaceProps) {
+export function ProformaInvoicesWorkspace({
+  org,
+  headingTitle,
+  headingDescription,
+}: WorkspaceProps) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
@@ -191,8 +200,13 @@ export function ProformaInvoicesWorkspace({ org }: WorkspaceProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">預收發票</h1>
-          <p className="text-sm text-zinc-500">由銷售合同一鍵開立；金額依合同所填「預收款（含稅）」拆稅後產生。</p>
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+            {headingTitle ?? "預收發票"}
+          </h1>
+          <p className="text-sm text-zinc-500">
+            {headingDescription ??
+              "由銷售合同一鍵開立；金額依合同所填「預收款（含稅）」拆稅後產生。"}
+          </p>
         </div>
         <Button type="button" variant="outline" asChild>
           <Link href="/dashboard/sales/contracts">銷售合同</Link>

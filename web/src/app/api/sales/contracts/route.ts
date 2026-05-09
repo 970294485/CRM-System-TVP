@@ -1,10 +1,11 @@
 import { desc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/auth";
 import { getDb } from "@/db";
-import { proformaInvoices, salesContracts } from "@/db/schema";
+import { proformaInvoices, salesContracts, users } from "@/db/schema";
 import { listSalesContractsViaNeonSql } from "@/lib/sales/contracts-list-fallback";
 
 export const runtime = "nodejs";
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const db = getDb();
+    const owner = alias(users, "sales_contract_owner");
     const base = db
       .select({
         id: salesContracts.id,
@@ -39,10 +41,14 @@ export async function GET(req: NextRequest) {
         prepaymentNotes: salesContracts.prepaymentNotes,
         status: salesContracts.status,
         createdAt: salesContracts.createdAt,
+        ownerUserId: salesContracts.ownerUserId,
+        ownerName: owner.name,
+        commissionRatePercent: salesContracts.commissionRatePercent,
         proformaInvoiceNo: proformaInvoices.invoiceNo,
       })
       .from(salesContracts)
-      .leftJoin(proformaInvoices, eq(proformaInvoices.contractId, salesContracts.id));
+      .leftJoin(proformaInvoices, eq(proformaInvoices.contractId, salesContracts.id))
+      .leftJoin(owner, eq(salesContracts.ownerUserId, owner.id));
 
     const rows =
       customerIdParsed.data !== undefined
@@ -62,6 +68,9 @@ export async function GET(req: NextRequest) {
       prepaymentNotes: r.prepaymentNotes,
       status: r.status,
       createdAt: r.createdAt,
+      ownerUserId: r.ownerUserId,
+      ownerName: r.ownerName,
+      commissionRatePercent: r.commissionRatePercent,
       proformaInvoiceNo: r.proformaInvoiceNo,
     }));
 

@@ -127,6 +127,13 @@
       "when": 1777600000000,
       "tag": "0017_general_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1777700000000,
+      "tag": "0018_sales_finance_commission",
+      "breakpoints": true
     }
   ]
 }
